@@ -2,19 +2,19 @@
   "manifest_version": 3,
   "name": "Live PhishGuard",
   "version": "1.0",
-  "description": "Real-time phishing detection for safer browsing.",
-  "permissions": ["webNavigation", "scripting", "activeTab", "storage"],
-  "host_permissions": ["<all_urls>"],
-  "background": {
-    "service_worker": "background.js"
+  "description": "Enterprise-grade Phishing URL Detector",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Open PhishGuard"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
-  ],
-  "action": {
-    "default_popup": "popup.html"
-  }
+  ]
 }

@@ -19,7 +19,7 @@ async function sendMessageWithRetry(tabId, message, retries = 5) {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
-    console.error("[PhishGuard] Failed to send message after maximum retries.");
+    console.warn("[PhishGuard] Failed to send message after maximum retries.");
 }
 
 async function updateStats(isThreat) {
@@ -51,7 +51,7 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
     console.log(`[PhishGuard] Intercepted URL: ${url}`);
 
     try {
-        const response = await fetch('http://localhost:8000/api/analyze', {
+        const response = await fetch('http://127.0.0.1:8000/api/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: url })
@@ -68,6 +68,6 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
             await sendMessageWithRetry(details.tabId, { action: "SHOW_WARNING", url: url });
         }
     } catch (error) {
-        console.error("[PhishGuard] Backend unreachable.", error);
+        console.warn("[PhishGuard] Backend unreachable.", error);
     }
 });

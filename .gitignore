@@ -1,11 +1,8 @@
+# Python Virtual Environments
 venv/
-env/
 __pycache__/
+*.pyc
 
-backend/dataset.csv
-*.csv
-
+# OS Files
 .DS_Store
 Thumbs.db
-
-.vscode/

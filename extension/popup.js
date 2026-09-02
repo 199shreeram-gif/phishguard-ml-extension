@@ -1,37 +1,43 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const scannedEl = document.getElementById('scanned-count');
-    const threatsEl = document.getElementById('threats-count');
-    const whitelistBtn = document.getElementById('whitelist-btn');
-    const statusDot = document.getElementById('server-status-dot');
-    const statusText = document.getElementById('server-status-text');
+    const urlDisplay = document.getElementById('current-url');
+    const statusCard = document.getElementById('status-card');
+    const statusText = document.getElementById('status-text');
+    const confidenceText = document.getElementById('confidence-text');
 
-    chrome.storage.local.get(['sitesScanned', 'threatsBlocked'], (data) => {
-        scannedEl.textContent = data.sitesScanned || 0;
-        threatsEl.textContent = data.threatsBlocked || 0;
-    });
+    // 1. Get the current active tab
+    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    // Display shortened URL for aesthetic reasons
+    let shortUrl = tab.url.length > 50 ? tab.url.substring(0, 50) + "..." : tab.url;
+    urlDisplay.textContent = shortUrl;
 
     try {
-        const response = await fetch('http://localhost:8000/docs');
-        if (response.ok) {
-            statusDot.style.backgroundColor = '#4CAF50'; 
-            statusText.textContent = "AI Server Online";
+        // 2. Ping the FastAPI Backend
+        let response = await fetch('http://127.0.0.1:8000/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: tab.url })
+        });
+        
+        let data = await response.json();
+
+        // 3. Update UI based on Machine Learning prediction
+        if (data.is_phishing) {
+            statusCard.className = 'status-card danger';
+            statusText.textContent = '⚠️ Phishing Threat Detected';
+            confidenceText.textContent = `Confidence: ${(data.confidence * 100).toFixed(1)}%`;
         } else {
-            throw new Error('Server returned non-200');
+            statusCard.className = 'status-card safe';
+            statusText.textContent = '✅ Safe Website';
+            if (data.whitelisted) {
+                confidenceText.textContent = "Verified by Trusted Domain Whitelist";
+            } else {
+                confidenceText.textContent = `Confidence: ${(data.confidence * 100).toFixed(1)}%`;
+            }
         }
     } catch (error) {
-        statusDot.style.backgroundColor = '#f44336'; 
-        statusText.textContent = "AI Server Offline";
+        statusCard.className = 'status-card neutral';
+        statusText.textContent = 'API Offline';
+        confidenceText.textContent = 'Please start the Uvicorn server.';
     }
-
-    whitelistBtn.addEventListener('click', async () => {
-        
-        let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        
-        if (tab && tab.url) {
-            const url = new URL(tab.url);
-            const domain = url.hostname;
-
-            alert(`✅ ${domain} has been added to your local whitelist.`);
-        }
-    });
 });
