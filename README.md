@@ -32,22 +32,6 @@ Security & Middleware: SlowAPI (Rate Limiting), LRU Caching
 
 Frontend: Chrome Extension (Manifest V3), JavaScript (ES6+), HTML5, CSS3
 
-Project Directory Structure
-
-Phishing-detector-project/
-│
-├── backend/
-│ ├── app.py # FastAPI application, routes, and middleware
-│ ├── model.pkl # Serialized machine learning model
-│ └── requirements.txt # Backend dependencies
-│
-└── extension/ # Chrome Extension frontend
-├── manifest.json # Extension configuration (Manifest V3)
-├── popup.html # Extension popup UI structure
-├── popup.css # Modern enterprise styling
-├── popup.js # Popup logic and API integration
-└── content.js # Autonomous background page scanner
-
 Installation & Setup Guide
 
 Step 1: Clone the Repository & Configure Backend
