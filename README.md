@@ -1,195 +1,121 @@
-# Live PhishGuard: ML-Powered Phishing Detection Extension
+PhishGuard: Enterprise-Grade Real-Time Phishing Detection System
 
-Live PhishGuard is a real-time, Machine Learning-powered browser extension built on the Chrome Manifest V3 architecture. It intercepts web traffic, extracts lexical URL features, and evaluates them against a custom-trained Random Forest Classifier to detect and block phishing attempts before a user can interact with malicious elements.
+PhishGuard is an advanced, production-ready cybersecurity solution designed to protect users from malicious phishing links in real-time. It combines a high-performance FastAPI machine learning backend with an autonomous Manifest V3 Chrome Extension frontend, utilizing a multi-layered defense-in-depth security model.
 
-## Table of Contents
+Key Architectural Features
 
-- [System Architecture](#system-architecture)
-- [Prerequisites](#prerequisites)
-- [Complete Installation Guide](#complete-installation-guide)
-  - [Phase 1: Setting up the Machine Learning Backend](#phase-1-setting-up-the-machine-learning-backend)
-  - [Phase 2: Installing the Browser Extension](#phase-2-installing-the-browser-extension)
-- [Usage Guide](#usage-guide)
-- [API Documentation](#api-documentation)
-- [Folder Structure](#folder-structure)
-- [Troubleshooting](#troubleshooting)
+1. Defense-in-Depth Analysis Engine
 
----
+Trusted Domain Whitelist: Instantly bypasses analysis for verified, safe domains (e.g., Google, GitHub) to maximize performance and minimize overhead.
 
-## System Architecture
+Asynchronous URL Unrolling: Handles shortened or masked URLs (e.g., TinyURL, Bitly) by performing async redirect resolution (HEAD requests) to uncover the final target destination before analysis.
 
-The project utilizes a Hybrid 3-Tier Architecture:
+Machine Learning Core: Powered by a scikit-learn model serialized via joblib, evaluating text and structural features to return a granular threat confidence score.
 
-1. **Frontend (Extension Client)**
-   - **Service Worker (`background.js`):** Operates ephemerally to intercept `webNavigation` events, manage cross-origin communication with the API backend, and maintain persistent state.
-   - **Content Script (`content.js`):** Injects non-destructive DOM warnings onto flagged web pages securely to prevent XSS vulnerabilities.
-   - **Dashboard UI (`popup.html`):** Provides a real-time threat analytics interface.
+Heuristic Override Layer: Hardened rule-based overrides that automatically intercept high-risk structural anomalies (such as raw IP addresses combined with excessive subdomain dots) to guarantee a high-confidence catch rate on severe threats.
 
-2. **API Gateway (FastAPI)**
-   An asynchronous Python web server that handles CORS middleware, feature extraction mapping, and Singleton-pattern model loading for near-zero latency inference.
+2. Enterprise Security & Performance Hardening
 
-3. **Machine Learning Engine (Scikit-Learn)**
-   An offline training pipeline that ingests dataset CSVs and serializes a trained Random Forest model (`.joblib`) for live evaluation.
+In-Memory LRU Caching: Utilizes Python's lru_cache to cache recent URL evaluations, dropping lookup latency to near-zero milliseconds for frequently visited domains.
 
----
+API Rate Limiting (SlowAPI): Mitigates denial-of-service and brute-force scraping attempts by enforcing strict rate-limiting policies (e.g., 60 requests/minute per client IP), gracefully returning HTTP 429 Too Many Requests responses when breached.
 
-## Prerequisites
+CORS Configuration: Securely handles cross-origin resource sharing to facilitate seamless communication between the browser extension and the local or remote API server.
 
-Before installing the project, ensure your system has the following installed:
+Tech Stack
 
-- **Python 3.10 or higher** (ensure Python is added to your system PATH)
-- **Git** (for cloning the repository)
-- **Google Chrome** (or any Chromium-based browser)
+Backend Framework: FastAPI, Uvicorn (ASGI Server)
 
----
+Machine Learning: Scikit-learn, Joblib, Pydantic
 
-## Complete Installation Guide
+Security & Middleware: SlowAPI (Rate Limiting), LRU Caching
 
-### Phase 1: Setting up the Machine Learning Backend
+Frontend: Chrome Extension (Manifest V3), JavaScript (ES6+), HTML5, CSS3
 
-**Step 1 — Clone the repository**
+Project Directory Structure
 
-Open your terminal or command prompt and run:
-
-```bash
-git clone https://github.com/yourusername/phishing-detector-project.git
-cd phishing-detector-project/backend
-```
-
-**Step 2 — Create a virtual environment**
-
-It is strictly recommended to use a virtual environment to prevent dependency conflicts.
-
-For Windows:
-
-```bash
-python -m venv venv
-.\venv\Scripts\activate
-```
-
-For Mac/Linux:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-**Step 3 — Install required dependencies**
-
-With your virtual environment active, install the required Python packages:
-
-```bash
-pip install fastapi uvicorn pydantic scikit-learn pandas joblib
-```
-
-**Step 4 — Prepare the dataset**
-
-- Download a Phishing Websites Dataset (e.g., from Kaggle or the UCI Machine Learning Repository).
-- Rename the downloaded file to `dataset.csv`.
-- Place `dataset.csv` directly into the `backend/` directory.
-
-**Step 5 — Train the AI model**
-
-Generate the machine learning model by running the training pipeline:
-
-```bash
-python train_model.py
-```
-
-Wait for the terminal to print `Model trained successfully!` and confirm that `phishing_model.joblib` has been generated in the folder.
-
-**Step 6 — Start the API server**
-
-Launch the FastAPI backend server:
-
-```bash
-uvicorn app:app --reload
-```
-
-The server is now running locally at `http://127.0.0.1:8000`.
-
----
-
-### Phase 2: Installing the Browser Extension
-
-1. Open Google Chrome and type `chrome://extensions/` in the URL bar.
-2. In the top right corner, toggle **Developer mode** to **ON**.
-3. In the top left corner, click the **Load unpacked** button.
-4. Navigate to your cloned repository and select the `extension/` folder.
-5. The Live PhishGuard extension will now appear in your browser.
-6. Click the puzzle piece icon in the Chrome toolbar and pin Live PhishGuard for easy access.
-
----
-
-## Usage Guide
-
-1. Ensure the Python backend server is actively running in your terminal.
-2. Browse the web normally.
-3. If you navigate to a URL that matches the mathematical profile of a phishing site, the extension will instantly inject a full-page warning banner preventing interaction with the site.
-4. Click the PhishGuard extension icon in the toolbar to view real-time statistics on sites scanned and threats blocked.
-
----
-
-## API Documentation
-
-### `POST /api/analyze`
-
-Evaluates a URL against the loaded Machine Learning model.
-
-**Request Payload:**
-
-```json
-{
-  "url": "http://192.168.1.1/secure-update.php?login=admin"
-}
-```
-
-**Response Payload:**
-
-```json
-{
-  "url": "http://192.168.1.1/secure-update.php?login=admin",
-  "is_phishing": true,
-  "confidence": 0.92,
-  "features_extracted": {
-    "length_url": 50,
-    "domain_in_ip": 1,
-    "qty_dot_url": 3
-  }
-}
-```
-
----
-
-## Folder Structure
-
-```
-phishing-detector-project/
+Phishing-detector-project/
+│
 ├── backend/
-│   ├── app.py                 # FastAPI Server & Feature Extraction
-│   ├── train_model.py         # Model Training Script
-│   ├── dataset.csv            # Training Data (Not included in repo)
-│   └── phishing_model.joblib  # Serialized AI Model
-└── extension/
-    ├── manifest.json          # Chrome Extension Config
-    ├── background.js          # Service Worker Interceptor
-    ├── content.js              # DOM Warning Injector
-    ├── popup.html              # Dashboard UI
-    └── popup.js                # UI Logic & State Management
-```
+│ ├── app.py # FastAPI application, routes, and middleware
+│ ├── model.pkl # Serialized machine learning model
+│ └── requirements.txt # Backend dependencies
+│
+└── extension/ # Chrome Extension frontend
+├── manifest.json # Extension configuration (Manifest V3)
+├── popup.html # Extension popup UI structure
+├── popup.css # Modern enterprise styling
+├── popup.js # Popup logic and API integration
+└── content.js # Autonomous background page scanner
 
----
+Installation & Setup Guide
 
-## Troubleshooting
+Step 1: Clone the Repository & Configure Backend
 
-**Error: `ModuleNotFoundError` (Pandas/Scikit-Learn)**
+Navigate to the backend directory:
 
-Ensure your virtual environment is activated before running the training script or starting the server.
+cd Phishing-detector-project/backend
 
-**Error: `IndexError` / `KeyError` during training**
+Create and activate a Python virtual environment:
 
-Open `dataset.csv` and verify the column headers exactly match the variables declared in the `feature_columns` array inside `train_model.py`.
+python -m venv venv
+..\venv\Scripts\activate # On Windows PowerShell
 
-**Extension reads "AI Server Offline"**
+Install the required dependencies inside the isolated environment:
 
-Check your terminal to ensure `uvicorn app:app --reload` is running and returning a `200 OK` status when you visit `http://localhost:8000/docs`.
+python -m pip install fastapi uvicorn slowapi joblib scikit-learn requests pydantic
+
+Step 2: Run the FastAPI Server
+
+Start the application server using Uvicorn with automatic reloading enabled:
+
+python -m uvicorn app:app --reload
+
+The API server will boot up successfully on http://127.0.0.1:8000. You can access the interactive Swagger documentation at http://127.0.0.1:8000/docs.
+
+Step 3: Load the Chrome Extension
+
+Open Google Chrome and navigate to chrome://extensions/.
+
+Enable Developer mode using the toggle switch in the top-right corner.
+
+Click Load unpacked in the top-left corner.
+
+Select your project's extension folder (Phishing-detector-project/extension).
+
+API Reference
+
+Analyze URL Endpoint
+
+Property
+
+Value
+
+URL
+
+/api/analyze
+
+Method
+
+POST
+
+Content-Type
+
+application/json
+
+Request Body:
+
+{
+"url": "https://example.com"
+}
+
+Response Body:
+
+{
+"url": "https://example.com",
+"final_destination": "https://example.com",
+"is_phishing": false,
+"confidence": 0.05,
+"whitelisted": true,
+"cached_response": false
+}
